@@ -15,7 +15,8 @@
   <link rel="icon" href="./static/images/favicon.svg">
 
   <script defer src="./static/js/fontawesome.all.min.js"></script>
-  <script src="./static/js/index.js"></script>
+  <script defer src="./static/js/index.js"></script>
+  <script defer src="./static/js/charts.js"></script>
 </head>
 <body>
 
@@ -157,49 +158,35 @@
       </div>
     </div>
 
-    <!-- Stats strip -->
-    <div class="container is-max-desktop" style="margin-top:2rem;">
-      <div class="stats-strip">
-        <div class="stat-card">
-          <div class="stat-num">58%</div>
-          <div class="stat-label">Average success rate across all 6 tasks</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num">4.81</div>
-          <div class="stat-label">Lowest avg. planning cost — best of all planners</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num">+19%</div>
-          <div class="stat-label">Success rate gain over MPNets neural sampler</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num">Zero</div>
-          <div class="stat-label">Additional fine-tuning needed for real-world transfer</div>
-        </div>
-      </div>
-    </div>
+    <!-- Highlights -->
+    <div class="fmp-highlight-shell reveal-block">
+      <div class="highlight-kicker">Highlights</div>
+      <h3>Inject planning structure directly into transformer attention.</h3>
+      <p class="highlight-lead">
+        GAIDE turns robot embodiment and workspace geometry into a graph, then uses that graph as an
+        attention mask so the neural sampler reasons over structurally meaningful robot-scene interactions.
+      </p>
 
-    <!-- Key Contributions -->
-    <div class="container is-max-desktop" style="margin-top:2rem;">
-      <h3 class="has-text-centered" style="font-family:'Google Sans',sans-serif; font-size:1.05rem; font-weight:700; color:#444; margin-bottom:0.8rem; letter-spacing:0.04em; text-transform:uppercase;">Key Contributions</h3>
-      <div class="contrib-grid">
-        <div class="contrib-card">
-          <div class="contrib-icon"><i class="fas fa-project-diagram"></i></div>
-          <h4>Graph Construction</h4>
-          <p>A unified graph encodes both the manipulator's kinematic chain (embodiment graph) and
-             the spatial relationships between the robot and workspace obstacles (spatial graph).</p>
+      <div class="highlight-grid">
+        <div class="highlight-card primary">
+          <span class="highlight-icon"><i class="fas fa-project-diagram"></i></span>
+          <strong>Graph Masking</strong>
+          <p>encode kinematic and spatial structure as attention constraints inside the transformer.</p>
         </div>
-        <div class="contrib-card">
-          <div class="contrib-icon"><i class="fas fa-th"></i></div>
-          <h4>Attention Masking</h4>
-          <p>The graph adjacency matrix is used as a binary attention mask inside the transformer encoder,
-             constraining information flow to structurally meaningful token pairs.</p>
+        <div class="highlight-card">
+          <span class="highlight-icon"><i class="fas fa-route"></i></span>
+          <strong>4.81</strong>
+          <p>lowest average planning cost across all evaluated planners and tasks.</p>
         </div>
-        <div class="contrib-card">
-          <div class="contrib-icon"><i class="fas fa-chart-bar"></i></div>
-          <h4>Superior Path Quality</h4>
-          <p>GAIDE consistently achieves the lowest planning cost across all six benchmark tasks,
-             outperforming all sampling-based baselines including neural informed samplers.</p>
+        <div class="highlight-card">
+          <span class="highlight-icon"><i class="fas fa-chart-line"></i></span>
+          <strong>58%</strong>
+          <p>average success rate across six held-out planning environments.</p>
+        </div>
+        <div class="highlight-card">
+          <span class="highlight-icon"><i class="fas fa-robot"></i></span>
+          <strong>Zero</strong>
+          <p>additional fine-tuning needed for real-world UR5e deployment.</p>
         </div>
       </div>
     </div>
@@ -212,90 +199,55 @@
   <div class="container is-max-desktop">
     <h2 class="sec-heading">Method</h2>
 
-    <div class="content" style="font-size:0.95rem; line-height:1.72; color:#333;">
-      <p>
-        GAIDE is a neural informed sampler embedded within a bidirectional sampling-based planner.
-        At each planning step it receives the current joint configuration, the goal configuration, the
-        robot point cloud, and the workspace point cloud, and outputs a delta joint angle that extends
-        the planning tree toward the goal. The framework is built around two core ideas: constructing a
-        scene graph that captures planning structure, and wiring that graph directly into the transformer
-        via attention masking.
-      </p>
+    <div class="method-story reveal-block">
+      <div class="method-copy">
+        <div class="highlight-kicker">Method</div>
+        <h3>Graph attention makes neural sampling spatial- and embodiment-aware.</h3>
+        <p>
+          At each planning step, GAIDE observes the current configuration, goal configuration, robot point
+          cloud, and workspace point cloud, then predicts a delta joint angle to extend the bidirectional tree.
+        </p>
+        <div class="formula-pill">A &rarr; masked attention &rarr; &delta;q<sub>t</sub></div>
+      </div>
+      <div class="method-steps">
+        <div class="method-step">
+          <span>1</span>
+          <h4>Construct the Graph</h4>
+          <p>Build embodiment edges along the robot and spatial edges from workspace nodes to robot nodes.</p>
+        </div>
+        <div class="method-step">
+          <span>2</span>
+          <h4>Mask Attention</h4>
+          <p>Use the graph adjacency matrix to restrict transformer attention to meaningful token pairs.</p>
+        </div>
+        <div class="method-step">
+          <span>3</span>
+          <h4>Grow the Planner</h4>
+          <p>Decode a goal-directed joint update and use it as an informed sample inside the planner.</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Graph Construction -->
-    <h3 class="subsec-heading">Graph Construction</h3>
-    <div class="content" style="font-size:0.95rem; line-height:1.72; color:#333;">
-      <p>
-        GAIDE builds a unified graph over two complementary representations of the planning scene:
-      </p>
-      <ul>
-        <li>
-          <strong>Embodiment graph.</strong> An <em>undirected</em> graph is constructed over the
-          downsampled robot point cloud. Each downsampled point is a node, and edges follow the
-          manipulator's kinematic chain, connecting every link to its adjacent neighbors. This
-          implicitly encodes the robot's kinematic topology without explicit kinematic parameters.
-        </li>
-        <li>
-          <strong>Spatial graph.</strong> A <em>directed, fully connected</em> graph connects every
-          node in the downsampled workspace point cloud to all robot graph nodes. This captures the
-          spatial relationship between each obstacle and every part of the manipulator body, providing
-          the planner with workspace-aware context.
-        </li>
-      </ul>
-      <p>
-        Both point clouds are downsampled using PointNet++ set abstraction layers. The resulting
-        combined adjacency matrix is used directly as an attention mask inside the transformer encoder.
-      </p>
+    <div class="method-visual-grid">
+      <div class="method-visual-card reveal-block compact-visual">
+        <img src="./static/images/02GraphConstruction-1.png"
+             alt="Graph construction over robot and workspace point clouds">
+        <p>
+          <strong>Graph Construction.</strong>
+          Robot nodes follow the manipulator topology, while workspace nodes connect to robot nodes to encode
+          spatial obstacle relationships.
+        </p>
+      </div>
+      <div class="method-visual-card reveal-block compact-visual">
+        <img src="./static/images/03GAIDE-1.png"
+             alt="GAIDE network architecture">
+        <p>
+          <strong>GAIDE Architecture.</strong>
+          Point-cloud and configuration tokens are fused by a transformer encoder with interleaved masked and
+          vanilla attention layers before decoding the next joint update.
+        </p>
+      </div>
     </div>
-
-    <div class="fig-wrap fig-md">
-      <img src="./static/images/02GraphConstruction-1.png"
-           alt="Graph Construction: embodiment and spatial graph over robot and workspace point clouds">
-      <p class="fig-cap">
-        <strong>Figure 1 &mdash; Graph Construction.</strong>
-        (Top) The robot point cloud is downsampled via PointNet++ to produce robot nodes connected
-        along the kinematic chain. (Bottom) The workspace point cloud is similarly downsampled to
-        workspace nodes. A directed graph then connects every workspace node to all robot nodes,
-        forming the spatial adjacency matrix used for attention masking.
-      </p>
-    </div>
-
-    <!-- GAIDE Architecture -->
-    <h3 class="subsec-heading">GAIDE Architecture</h3>
-    <div class="content" style="font-size:0.95rem; line-height:1.72; color:#333;">
-      <p>
-        Given the graph adjacency matrix <strong>A</strong>, GAIDE processes four input streams through
-        dedicated encoders:
-        a shared MLP embeds the current and goal joint configurations;
-        two PointNet++ set abstraction stacks encode the robot and workspace point clouds.
-        Robot, goal, and current-step embeddings are fused and passed as a token sequence to the
-        transformer encoder.
-      </p>
-      <p>
-        The encoder <em>interleaves</em> masked attention layers — where off-graph token pairs are
-        suppressed by setting their attention logits to &minus;&infin; — with standard vanilla attention
-        layers that allow unconstrained global aggregation. This interleaving preserves long-range
-        dependencies while enforcing structural inductive biases, avoiding the oversmoothing that
-        plagues deep GNN message-passing. Dropout is applied at inference time to introduce
-        stochasticity, which is essential for probabilistic completeness of the planning algorithm.
-        A lightweight transformer decoder takes a single learnable token and, conditioned on the
-        encoder output, predicts the delta joint angle &delta;<strong>q</strong><sub>t</sub>.
-      </p>
-    </div>
-
-    <div class="fig-wrap fig-lg">
-      <img src="./static/images/03GAIDE-1.png"
-           alt="GAIDE network architecture">
-      <p class="fig-cap">
-        <strong>Figure 2 &mdash; GAIDE Network Architecture.</strong>
-        Current and goal configurations are encoded by a shared MLP; robot and workspace point clouds
-        are encoded by PointNet++ set abstraction layers. The transformer encoder alternates masked
-        attention (constrained by the graph adjacency matrix) and vanilla attention layers. The
-        transformer decoder predicts a delta joint angle to grow the planning tree.
-      </p>
-    </div>
-
   </div>
 </section>
 
@@ -321,7 +273,7 @@
     <!-- Planning Tasks -->
     <h3 class="subsec-heading">Evaluation Environments</h3>
 
-    <div class="fig-wrap fig-full">
+    <div class="fig-wrap fig-md">
       <img src="./static/images/04PlanningTasks-1.png"
            alt="Six held-out planning tasks">
       <p class="fig-cap">
@@ -332,154 +284,14 @@
       </p>
     </div>
 
-    <!-- Table 1 -->
-    <h3 class="subsec-heading" style="margin-top:2.5rem;">Planning Time and Success Rate</h3>
+    <!-- Interactive benchmark chart -->
+    <h3 class="subsec-heading" style="margin-top:2.5rem;">Planning Metrics</h3>
 
-    <div class="tbl-scroll">
-      <table class="bt">
-        <thead>
-          <tr>
-            <th class="left" rowspan="2">Method</th>
-            <th colspan="2">TableTop</th>
-            <th colspan="2">Box</th>
-            <th colspan="2">Bins</th>
-            <th colspan="2">Shelf-I</th>
-            <th colspan="2">Shelf-II</th>
-            <th colspan="2">Shelf-III</th>
-          </tr>
-          <tr>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Uniform -->
-          <tr>
-            <td class="left">Bi-RRT</td>
-            <td>2.85<small>±0.97</small></td><td><span class="bv">88%</span></td>
-            <td><span class="bv">0.73<small>±0.54</small></span></td><td>71%</td>
-            <td><span class="bv">1.10<small>±0.67</small></span></td><td><span class="bv">98.3%</span></td>
-            <td>2.71<small>±0.73</small></td><td><span class="bv">98%</span></td>
-            <td>3.91<small>±1.12</small></td><td><span class="bv">82.6%</span></td>
-            <td>4.07<small>±1.17</small></td><td>45%</td>
-          </tr>
-          <tr>
-            <td class="left">RRT*</td>
-            <td>4.15<small>±0.99</small></td><td>50%</td>
-            <td>2.59<small>±0.07</small></td><td>55%</td>
-            <td>3.08<small>±0.10</small></td><td>64%</td>
-            <td>4.29<small>±1.14</small></td><td>51%</td>
-            <td>5.78<small>±0.85</small></td><td>40.6%</td>
-            <td>5.12<small>±1.39</small></td><td>29%</td>
-          </tr>
-          <!-- Heuristic separator -->
-          <tr class="sep"><td colspan="13"></td></tr>
-          <tr>
-            <td class="left">IRRT*</td>
-            <td>4.44<small>±1.35</small></td><td>48%</td>
-            <td>2.54<small>±0.80</small></td><td>55%</td>
-            <td>3.12<small>±0.09</small></td><td>66.5%</td>
-            <td>4.74<small>±1.89</small></td><td>55%</td>
-            <td>5.94<small>±1.04</small></td><td>37%</td>
-            <td>6.65<small>±1.69</small></td><td>27%</td>
-          </tr>
-          <tr>
-            <td class="left">BIT*</td>
-            <td>3.19<small>±2.67</small></td><td>71%</td>
-            <td>1.40<small>±1.47</small></td><td>67%</td>
-            <td>1.84<small>±1.81</small></td><td>93.8%</td>
-            <td>4.35<small>±2.38</small></td><td>91%</td>
-            <td>5.95<small>±2.09</small></td><td>75%</td>
-            <td>4.84<small>±3.24</small></td><td>38%</td>
-          </tr>
-          <!-- Neural separator -->
-          <tr class="sep"><td colspan="13"></td></tr>
-          <tr>
-            <td class="left">MPNets</td>
-            <td><span class="bv">2.66<small>±1.26</small></span></td><td>41%</td>
-            <td>2.41<small>±1.01</small></td><td>62%</td>
-            <td>3.45<small>±1.62</small></td><td>84.5%</td>
-            <td><span class="bv">2.29<small>±0.01</small></span></td><td>39%</td>
-            <td><span class="bv">2.57<small>±0.89</small></span></td><td>34%</td>
-            <td><span class="bv">3.43<small>±1.19</small></span></td><td>32%</td>
-          </tr>
-          <tr>
-            <td class="left">SIMPNet</td>
-            <td>5.68<small>±10.2</small></td><td>51%</td>
-            <td>2.68<small>±1.66</small></td><td>67%</td>
-            <td>3.97<small>±2.52</small></td><td>94.2%</td>
-            <td>3.28<small>±0.10</small></td><td>44%</td>
-            <td>2.96<small>±1.43</small></td><td>35%</td>
-            <td>6.88<small>±4.78</small></td><td>33%</td>
-          </tr>
-          <!-- GAIDE -->
-          <tr class="ours">
-            <td class="left">GAIDE (ours)</td>
-            <td>3.00<small>±2.58</small></td><td>52%</td>
-            <td>2.17<small>±2.02</small></td><td><span class="bv">68%</span></td>
-            <td>3.72<small>±3.56</small></td><td>96%</td>
-            <td>2.99<small>±1.58</small></td><td>55%</td>
-            <td>5.56<small>±2.57</small></td><td>44%</td>
-            <td>4.34<small>±3.25</small></td><td><span class="bv">38%</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="fmp-bar-chart reveal-block" data-chart="benchmark"></div>
     <p class="tbl-cap">
-      <strong>Table 1.</strong> Planning time T&nbsp;[s] (lower&nbsp;&#8595;) and success rate S&nbsp;[%]
-      (higher&nbsp;&#8593;) across all six held-out tasks. Horizontal rules separate uniform samplers,
-      heuristic-based informed samplers, and neural informed samplers.
-      <span style="color:#1b5e20; font-weight:700;">Bold green</span> marks the best value per column.
-      GAIDE consistently outperforms all neural baselines on success rate.
+      Interactive comparison of success rate S&nbsp;[%], planning time T&nbsp;[s], planning cost C, and average
+      success/time across all held-out tasks. Toggle the metric to compare uniform, heuristic, and neural informed samplers.
     </p>
-
-    <!-- Planning Cost figure -->
-    <h3 class="subsec-heading" style="margin-top:2.5rem;">Planning Cost</h3>
-    <div class="content" style="font-size:0.95rem; line-height:1.72; color:#333;">
-      <p>
-        Planning cost measures the path length in configuration space (lower is better).
-        GAIDE achieves the lowest average cost of <strong>4.81&thinsp;&plusmn;&thinsp;1.63</strong>
-        across all tasks — substantially below Bi-RRT (16.2&thinsp;&plusmn;&thinsp;7.05),
-        RRT* (6.98&thinsp;&plusmn;&thinsp;6.47), IRRT* (10.9&thinsp;&plusmn;&thinsp;6.98), and
-        BIT* (9.0&thinsp;&plusmn;&thinsp;5.17), confirming that graph-structured attention produces
-        shorter, higher-quality paths compared to both classical and neural baselines.
-      </p>
-    </div>
-
-    <div class="fig-wrap fig-full">
-      <img src="./static/images/05PlanningCost-1.png"
-           alt="Planning cost comparison bar chart">
-      <p class="fig-cap">
-        <strong>Figure 4 &mdash; Planning Cost.</strong>
-        GAIDE achieves the lowest path cost in configuration space across all six tasks and on
-        average, demonstrating that the graph-structured attention produces higher-quality paths
-        than all baselines.
-      </p>
-    </div>
-
-    <!-- Radar charts -->
-    <h3 class="subsec-heading" style="margin-top:2.5rem;">Average Success Rate and Planning Time</h3>
-
-    <div class="fig-wrap fig-sm">
-      <img src="./static/images/06Average-1.png"
-           alt="Radar charts: average success rate and planning time">
-      <p class="fig-cap">
-        <strong>Figure 5 &mdash; Overall Comparison.</strong>
-        Radar charts of average success rate (left) and planning time (right) across all tasks.
-        GAIDE achieves higher average success rate than both MPNets and SIMPNet while maintaining
-        competitive planning time.
-      </p>
-    </div>
 
   </div>
 </section>
@@ -513,68 +325,10 @@
       </p>
     </div>
 
-    <div class="tbl-scroll">
-      <table class="bt">
-        <thead>
-          <tr>
-            <th class="left" rowspan="2">Variant</th>
-            <th colspan="2">TableTop</th>
-            <th colspan="2">Box</th>
-            <th colspan="2">Bins</th>
-            <th colspan="2">Shelf-I</th>
-            <th colspan="2">Shelf-II</th>
-            <th colspan="2">Shelf-III</th>
-          </tr>
-          <tr>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-            <th>T [s]&nbsp;<span class="arr">&#8595;</span></th>
-            <th>S [%]&nbsp;<span class="arr">&#8593;</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="left">GAIDE-V</td>
-            <td>2.96<small>±2.71</small></td><td>45%</td>
-            <td>2.15<small>±1.51</small></td><td>62%</td>
-            <td>3.61<small>±3.58</small></td><td>81.3%</td>
-            <td>3.26<small>±1.56</small></td><td>45%</td>
-            <td>3.58<small>±2.79</small></td><td>36%</td>
-            <td>4.03<small>±3.42</small></td><td>33%</td>
-          </tr>
-          <tr>
-            <td class="left">GAIDE-H</td>
-            <td>2.61<small>±2.71</small></td><td>48%</td>
-            <td>2.01<small>±1.25</small></td><td>59%</td>
-            <td>3.41<small>±3.04</small></td><td>77.3%</td>
-            <td>2.48<small>±1.51</small></td><td>45%</td>
-            <td>4.58<small>±2.29</small></td><td>34%</td>
-            <td>4.42<small>±4.98</small></td><td>30%</td>
-          </tr>
-          <tr class="ours">
-            <td class="left">GAIDE (ours)</td>
-            <td>3.00<small>±2.58</small></td><td><span class="bv">52%</span></td>
-            <td>2.17<small>±2.02</small></td><td><span class="bv">65%</span></td>
-            <td>3.72<small>±3.56</small></td><td><span class="bv">96%</span></td>
-            <td>2.99<small>±1.58</small></td><td><span class="bv">55%</span></td>
-            <td>5.56<small>±2.57</small></td><td><span class="bv">44%</span></td>
-            <td>4.34<small>±3.25</small></td><td><span class="bv">38%</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="fmp-bar-chart reveal-block" data-chart="ablation"></div>
     <p class="tbl-cap">
-      <strong>Table 2.</strong> Ablation of attention masking strategy. GAIDE-V uses no masking;
-      GAIDE-H applies masking at every encoder layer; GAIDE interleaves masked and vanilla layers.
-      <span style="color:#1b5e20; font-weight:700;">Bold green</span> marks the best value per column.
+      Interactive ablation of the attention masking strategy. GAIDE interleaves masked and vanilla
+      attention layers, while GAIDE-V removes masking and GAIDE-H applies hard masking at every layer.
     </p>
 
   </div>
@@ -598,7 +352,7 @@
       </p>
     </div>
 
-    <div class="fig-wrap fig-full">
+    <div class="fig-wrap fig-md">
       <img src="./static/images/07RealDemo-1.png"
            alt="Real-world deployment: Demo I (bin), Demo II (shelf), Demo III (shelf)">
       <p class="fig-cap">
