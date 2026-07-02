@@ -234,6 +234,7 @@ body {
   font-family: 'Noto Sans', sans-serif;
   color: #222;
   background: #fff;
+  overflow-x: hidden;
 }
 a { color: #1b5e20; }
 a:hover { text-decoration: underline; }
@@ -255,6 +256,7 @@ a:hover { text-decoration: underline; }
   font-size: 2rem;
   line-height: 1.28;
   color: #111;
+  max-width: 100%;
 }
 .publication-authors {
   font-family: 'Google Sans', sans-serif;
@@ -278,11 +280,19 @@ a:hover { text-decoration: underline; }
 
 /* ===== BUTTONS ===== */
 .publication-links .icon img { max-height: 1.25em; width: auto; }
+.publication-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.publication-links .link-block { display: inline-flex; }
 .link-block a { margin: 4px; }
 
 /* ===== VIDEO ===== */
 .publication-video-block {
   max-width: 900px;
+  width: 100%;
   margin: 1.8rem auto 0;
 }
 .publication-video-block video {
@@ -639,6 +649,37 @@ table.bt tr.ours:hover td { background: #dce8f8; }
 .fmp-bar.m-gaide { box-shadow: 0 0 0 1.5px rgba(27,94,32,0.45); }
 .reveal-block { opacity: 1; transform: none; transition: opacity 0.45s ease, transform 0.45s ease; }
 @media (max-width: 768px) {
-  .fmp-chart-plot { height: 190px; min-width: 500px; }
+  .container,
+  .columns,
+  .column {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hero-body { padding-left: 1rem; padding-right: 1rem; }
+  .publication-title {
+    font-size: 1.24rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .publication-links {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .publication-links .button { max-width: calc(100vw - 2rem); }
+  .publication-video-block video,
+  .fig-wrap img { max-width: 100%; height: auto; }
+  .publication-video-block,
+  .fig-wrap {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+  .fig-wrap { padding-left: 0.65rem; padding-right: 0.65rem; }
+  .fmp-chart-plot { height: 190px; min-width: 0; }
   .fmp-bar-group-label { font-size: 0.65rem; }
 }
